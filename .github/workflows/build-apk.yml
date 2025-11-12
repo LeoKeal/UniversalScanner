@@ -1,0 +1,39 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.8'
+        
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y openjdk-8-jdk zip unzip
+        
+    - name: Install Buildozer
+      run: pip install buildozer
+        
+    - name: Build APK
+      run: |
+        buildozer init || true
+        buildozer -v android debug
+      
+    - name: Upload APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: scanner-apk
+        path: bin/*.apk

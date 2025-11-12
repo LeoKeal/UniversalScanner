@@ -1,0 +1,11 @@
+{
+    "github-actions.workflows.pinned.workflows": [
+        ".github/workflows/build-apk.yml"
+    ],
+    "git.autofetch": true,
+    "files.exclude": {
+        "**/.buildozer": true,
+        "**/bin": true,
+        "**/*.apk": true
+    }
+}
