@@ -5,35 +5,82 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  workflow_dispatch:  # 允许手动触发
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4  # 更新到v4
       
-    - name: Set up Python
-      uses: actions/setup-python@v3
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v4  # 更新到v4
       with:
         python-version: '3.8'
         
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y openjdk-8-jdk zip unzip
-        
+        sudo apt-get install -y \
+          openjdk-8-jdk \
+          zip \
+          unzip \
+          git \
+          make \
+          cmake \
+          autoconf \
+          automake \
+          libtool \
+          pkg-config \
+          zlib1g-dev \
+          libncurses5-dev \
+          libtinfo5
+          
     - name: Install Buildozer
       run: pip install buildozer
+      
+    - name: Cache build dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.buildozer
+          ~/.gradle
+        key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+        restore-keys: |
+          ${{ runner.os }}-buildozer-
+          
+    - name: Create basic buildozer.spec if missing
+      run: |
+        if [ ! -f buildozer.spec ]; then
+          buildozer init
+          echo "创建了默认的buildozer.spec文件"
+        else
+          echo "buildozer.spec已存在"
+        fi
         
     - name: Build APK
       run: |
-        buildozer init || true
+        # 清理之前的构建
+        buildozer android clean
+        
+        # 尝试构建
+        echo "开始构建APK..."
         buildozer -v android debug
-      
-    - name: Upload APK
-      uses: actions/upload-artifact@v3
+        
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4  # 更新到v4
       with:
         name: scanner-apk
         path: bin/*.apk
+        retention-days: 30
+        
+    - name: Upload build logs
+      if: always()
+      uses: actions/upload-artifact@v4  # 更新到v4
+      with:
+        name: build-logs
+        path: .buildozer
+        retention-days: 7
